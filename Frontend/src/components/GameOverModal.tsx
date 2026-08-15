@@ -16,7 +16,6 @@ interface GameOverModalProps {
 
 export default function GameOverModal({
   score,
-  highScore,
   isNewHighScore,
   submittedRank,
   submissionMessage,

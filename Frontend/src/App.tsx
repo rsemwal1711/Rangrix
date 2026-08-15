@@ -11,6 +11,21 @@ import { SoundClickListener } from "./audio/SoundClickListener";
 import { Medal } from "./components/Medal";
 import { RankCelebration } from "./components/RankCelebrations";
 
+
+function denseRank(entries: LeaderboardEntry[]): LeaderboardEntry[] {
+  const sorted = [...entries].sort((a, b) => b.score - a.score);
+  let rank = 0;
+  let lastScore: number | null = null;
+  return sorted.map((entry) => {
+    if (entry.score !== lastScore) {
+      rank += 1;
+      lastScore = entry.score;
+    }
+    return { ...entry, rank };
+  });
+}
+
+
 export default function App() {
   const engineRef = useRef<Engine | null>(null);
   const [state, setState] = useState<GameState>("idle");
@@ -44,8 +59,6 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const prevRankRef = useRef<number | null>(null);
-  const [celebrateRank, setCelebrateRank] = useState<1 | 2 | 3 | null>(null);
   const DEMO_LEADERBOARD: LeaderboardEntry[] = [
     { rank: 1, name: "KANE", score: 1420, detail: "Neon Sprint" },
     { rank: 2, name: "NOVA", score: 1180, detail: "Hard Run" },
@@ -125,40 +138,49 @@ export default function App() {
   }, [appPhase]);
 
   const handleSubmitLeaderboard = async (score: number) => {
-  setSubmissionError(null);
-  setSubmissionMessage(null);
-  setIsSubmittingScore(true);
+    setSubmissionError(null);
+    setSubmissionMessage(null);
+    setIsSubmittingScore(true);
 
-  const safeName = (authUser || "PLAYER").trim().slice(0, 12) || "PLAYER";
-  try {
-   const response = await submitScore(safeName, score, authToken ?? undefined);
-  setLeaderboard(response.topScores.slice(0, leaderboardLimit));
-  setSubmittedRank(response.rank);
-  setSubmissionMessage(
-    response.rank <= 3
-      ? `Nice! You made the Top 3 with rank #${response.rank}.`
-      : `Good run — your rank is #${response.rank}.`
-  );
+    const safeName = (authUser || "PLAYER").trim().slice(0, 12) || "PLAYER";
+    try {
+      const response = await submitScore(safeName, score, authToken ?? undefined);
 
-  if (response.rank <= 3) {
-    celebrationIdRef.current += 1;
-    setCelebration({ rank: response.rank as 1 | 2 | 3, id: celebrationIdRef.current });
-  }
+      // Dense-rank the returned scores: equal scores share the same rank (1,1,2,3...)
+      const sorted = [...response.topScores].sort((a, b) => b.score - a.score);
+      let rank = 0;
+      let lastScore: number | null = null;
+      const ranked = sorted.map((entry) => {
+        if (entry.score !== lastScore) {
+          rank += 1;
+          lastScore = entry.score;
+        }
+        return { ...entry, rank };
+      });
 
-    const prevRank = prevRankRef.current;
-    const enteredTopThree = prevRank === null || prevRank > 3;
-    const improvedWithinTopThree = prevRank !== null && prevRank <= 3 && response.rank < prevRank;
+      setLeaderboard(ranked.slice(0, leaderboardLimit));
 
-    if (response.rank <= 3 && (enteredTopThree || improvedWithinTopThree)) {
-      setCelebrateRank(response.rank as 1 | 2 | 3);
+      // Find this player's dense rank based on their own submission
+      const myEntry = ranked.find((e) => e.score === score && e.name === safeName);
+      const myRank = myEntry ? myEntry.rank : response.rank;
+
+      setSubmittedRank(myRank);
+      setSubmissionMessage(
+        myRank <= 3
+          ? `Nice! You made the Top 3 with rank #${myRank}.`
+          : `Good run — your rank is #${myRank}.`
+      );
+
+      if (myRank <= 3) {
+        celebrationIdRef.current += 1;
+        setCelebration({ rank: myRank as 1 | 2 | 3, id: celebrationIdRef.current });
+      }
+    } catch (error) {
+      setSubmissionError("Could not submit score. Try again later.");
+    } finally {
+      setIsSubmittingScore(false);
     }
-    prevRankRef.current = response.rank; 
-  } catch (error) {
-    setSubmissionError("Could not submit score. Try again later.");
-  } finally {
-    setIsSubmittingScore(false);
-  }
-};
+  };
 
   useEffect(() => {
     if (state === "gameover" && score > 0 && !isSubmittingScore && submittedRank == null) {
@@ -192,7 +214,7 @@ export default function App() {
       try {
         setLeaderboardLoading(true);
         const scores = await fetchLeaderboard();
-        setLeaderboard(scores.slice(0, leaderboardLimit));
+        setLeaderboard(denseRank(scores).slice(0, leaderboardLimit));
         try {
           const meRes = await fetch("http://localhost:4000/api/leaderboard/me", {
             headers: { Authorization: `Bearer ${data.token}` },
@@ -236,7 +258,7 @@ export default function App() {
       try {
         const scores = await fetchLeaderboard();
         if (!active) return;
-        setLeaderboard(scores.length ? scores.slice(0, leaderboardLimit) : []);
+        setLeaderboard(scores.length ? denseRank(scores).slice(0, leaderboardLimit) : []);
         if (authUser && authToken) {
           try {
             const meRes = await fetch("http://localhost:4000/api/leaderboard/me", {
