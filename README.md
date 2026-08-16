@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎮 RANGRIX
+# 🎮 RANGRIX 🎮
 
 **A neon arcade lane runner featuring live leaderboards, player customization.**
 
