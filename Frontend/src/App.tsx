@@ -218,7 +218,7 @@ export default function App() {
         setLeaderboard(denseRank(scores).slice(0, leaderboardLimit));
         try {
           // const meRes = await fetch("http://localhost:4000/api/leaderboard/me", {
-          const meRes = await fetch(`${import.meta.env.VITE_API_URTL}/api/leaderboard/me`, {
+          const meRes = await fetch(`${import.meta.env.VITE_API_URL}/api/leaderboard/me`, {
             headers: { Authorization: `Bearer ${data.token}` },
           });
           if (meRes.ok) {
