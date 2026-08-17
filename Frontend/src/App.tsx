@@ -199,7 +199,8 @@ export default function App() {
         body.email = authEmail;
       }
 
-      const res = await fetch(`http://localhost:4000/api/auth/${endpoint}`, {
+      // const res = await fetch(`http://localhost:4000/api/auth/${endpoint}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -216,7 +217,8 @@ export default function App() {
         const scores = await fetchLeaderboard();
         setLeaderboard(denseRank(scores).slice(0, leaderboardLimit));
         try {
-          const meRes = await fetch("http://localhost:4000/api/leaderboard/me", {
+          // const meRes = await fetch("http://localhost:4000/api/leaderboard/me", {
+          const meRes = await fetch(`${import.meta.env.VITE_API_URTL}/api/leaderboard/me`, {
             headers: { Authorization: `Bearer ${data.token}` },
           });
           if (meRes.ok) {
@@ -261,7 +263,8 @@ export default function App() {
         setLeaderboard(scores.length ? denseRank(scores).slice(0, leaderboardLimit) : []);
         if (authUser && authToken) {
           try {
-            const meRes = await fetch("http://localhost:4000/api/leaderboard/me", {
+            // const meRes = await fetch("http://localhost:4000/api/leaderboard/me", {
+            const meRes = await fetch(`${import.  meta.env.VITE_API_URL}/api/leaderboard/me`, {
               headers: { Authorization: `Bearer ${authToken}` },
             });
             if (meRes.ok) {
