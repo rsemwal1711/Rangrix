@@ -370,9 +370,15 @@ export default function App() {
         />
       )}
       <div className="stage relative min-h-screen w-full flex items-center justify-center overflow-y-auto overflow-x-hidden px-4 py-6 alive-bg">
-        <div className="absolute top-4 right-4 z-20">
-          <AudioToggleButton />
-        </div>
+       
+        {/* <div 
+  className="fixed top-4 right-4 z-50 pointer-events-auto"
+  style={{ paddingTop: "env(safe-area-inset-top)", paddingRight: "env(safe-area-inset-right)" }}
+> */}
+
+  <AudioToggleButton />
+  
+{/* </div> */}
         <SparkleTrail />
         <div className="bg-aurora" />
         <div className="bg-grid" />
@@ -382,7 +388,7 @@ export default function App() {
           <audio ref={audioElRef} src={customAudioUrl} preload="auto" />
         )}
 
-        <div className={`relative z-10 w-full ${isPlaying ? "max-w-[720px] h-[72vh] max-h-[90vh]" : "max-w-[1200px]"}`}>
+        <div className={`relative z-10 w-full ${isPlaying ? "max-w-[720px] h-[72dvh] max-h-[90dvh]" : "max-w-[1200px]"}`}>
 
           {isPlaying && (
             <div className="frame-inner">

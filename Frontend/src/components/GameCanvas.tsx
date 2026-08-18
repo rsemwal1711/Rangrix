@@ -138,7 +138,14 @@ export default function GameCanvas({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [engineRef]);
 
-  const handleTap = (e: React.PointerEvent<HTMLDivElement>) => {
+  // Swipe-to-move, tap-to-jump (pointer events cover touch, mouse, and pen)
+  const pointerStart = useRef({ x: 0, y: 0, time: 0, id: -1 });
+
+  const SWIPE_THRESHOLD = 40; // px — min distance to count as a swipe
+  const TAP_MAX_DURATION = 250; // ms — max time for a "tap"
+  const TAP_MAX_MOVEMENT = 15; // px — max drift to still count as a tap
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const engine = engineRef.current;
     if (!engine) return;
 
@@ -147,24 +154,51 @@ export default function GameCanvas({
       return;
     }
 
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const relativeX = e.clientX - rect.left;
-    const half = rect.width / 2;
+    pointerStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: Date.now(),
+      id: e.pointerId,
+    };
+  };
 
-    if (relativeX < half) {
-      engine.moveLeft();
-    } else {
-      engine.moveRight();
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    if (engine.state !== "playing") return;
+    if (e.pointerId !== pointerStart.current.id) return;
+
+    const dx = e.clientX - pointerStart.current.x;
+    const dy = e.clientY - pointerStart.current.y;
+    const dt = Date.now() - pointerStart.current.time;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    // Short tap with minimal movement -> jump
+    if (dt < TAP_MAX_DURATION && absDx < TAP_MAX_MOVEMENT && absDy < TAP_MAX_MOVEMENT) {
+      engine.boost();
+      return;
     }
-    engine.boost();
+
+    // Dominant horizontal movement -> lane swipe
+    if (absDx > absDy) {
+      if (absDx > SWIPE_THRESHOLD) {
+        if (dx > 0) engine.moveRight();
+        else engine.moveLeft();
+      }
+    } else {
+      // Swipe up -> also jump
+      if (dy < -SWIPE_THRESHOLD) {
+        engine.boost();
+      }
+    }
   };
 
   return (
     <div
       ref={containerRef}
-      onPointerDown={handleTap}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
       className={`relative w-full h-full touch-none select-none overflow-hidden rounded-2xl border border-white/10`}
     >
       <canvas ref={canvasRef} className="absolute inset-0 block" />

@@ -475,3 +475,85 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
   0%, 82% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+
+/* ============================================================
+   MOBILE FIXES — small screens
+   ============================================================ */
+
+@media (max-width: 640px) {
+  /* 118% base font + cursive Caveat font makes everything
+     oversized and causes text wrapping/overflow on phones */
+  html {
+    font-size: 92%;
+  }
+
+  /* Prevent any horizontal scroll caused by decorative elements */
+  body, .stage {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+  }
+
+  .stage {
+    padding: 10px !important;
+  }
+
+  /* iOS Safari zooms in on any input with font-size < 16px —
+     force 16px on all form fields regardless of Tailwind classes */
+  input, select, textarea, button {
+    font-size: 16px !important;
+  }
+
+  /* Sun decoration was overflowing/clipping oddly on narrow viewports */
+  .rx-sun {
+    width: 180px;
+    height: 180px;
+    top: -50px;
+    right: -50px;
+    opacity: 0.6;
+  }
+
+  /* Game frame: use dvh instead of vh so mobile browser UI
+     (address bar) doesn't cut off the canvas */
+  .frame-inner {
+    height: 100%;
+  }
+
+  /* Intro hero: shrink title + icon so header doesn't wrap awkwardly */
+  .rx-display {
+    font-size: 2.1rem !important;
+    line-height: 1.1;
+  }
+
+  /* Reduce big padding on cards/panels to reclaim screen space */
+  .rounded-\[32px\], .rounded-\[26px\] {
+    border-radius: 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 85%;
+  }
+
+  .rx-display {
+    font-size: 1.7rem !important;
+  }
+
+  /* Stack color/shape swatch buttons a bit tighter */
+  .gap-3 {
+    gap: 0.5rem !important;
+  }
+}
+
+/* Fix 100vh mobile viewport bug (address bar resize jank) globally,
+   for any element using the CSS var below instead of vh directly */
+:root {
+  --app-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
+}

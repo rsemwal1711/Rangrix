@@ -6,10 +6,13 @@ export function AudioToggleButton() {
 
   return (
     <button
-      onClick={toggleMute}
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleMute();
+      }}
       aria-label={muted ? "Unmute sound" : "Mute sound"}
+      style={{ position: "fixed", top: "1.25rem", right: "1.25rem", zIndex: 999, touchAction: "manipulation" }}
       className={`
-        fixed top-5 right-5 z-50
         flex items-center justify-center
         w-12 h-12 rounded-full
         border backdrop-blur-md
