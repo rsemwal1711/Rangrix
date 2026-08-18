@@ -410,8 +410,8 @@ export default function App() {
                   <div className="space-y-6">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        {/* <div className="w-16 h-16 rounded-[26px] bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-[#1c0f24] font-black text-3xl shadow-[0_18px_45px_rgba(255,120,73,0.35)]"> */}
-                        <div className="w-16 h-16 rounded-[26px] bg-gradient-to-br flex items-center justify-center text-[#1c0f24] font-black text-3xl shadow-[0_18px_45px_rgba(255,120,73,0.35)]">
+                        <div className="w-16 h-16 rounded-[26px] bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-[#1c0f24] font-black text-3xl shadow-[0_18px_45px_rgba(255,120,73,0.35)]">
+                        
                           R
                         </div>
                         <div>
