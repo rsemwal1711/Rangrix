@@ -135,9 +135,10 @@ export class Engine {
     }
   }
 
-  setPlayerAppearance(color: string, shape: "circle" | "square" | "triangle") {
+  setPlayerAppearance(color: string, shape: "circle" | "square" | "triangle", faceUrl?: string | null) {
     this.player.setColor(color);
     this.player.setShape(shape);
+    this.player.setFaceImage(faceUrl ?? null);
   }
 
   private spawnObstacle() {

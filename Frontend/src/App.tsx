@@ -10,6 +10,7 @@ import { AudioToggleButton } from "./audio/AudioToggleButton";
 import { SoundClickListener } from "./audio/SoundClickListener";
 import { Medal } from "./components/Medal";
 import { RankCelebration } from "./components/RankCelebrations";
+import { removeBackground } from "@imgly/background-removal";
 
 
 function denseRank(entries: LeaderboardEntry[]): LeaderboardEntry[] {
@@ -82,6 +83,32 @@ export default function App() {
   const [musicVolume, setMusicVolume] = useState(0.7);
   const [musicLoop, setMusicLoop] = useState(true);
 
+  const [customFaceUrl, setCustomFaceUrl] = useState<string | null>(null);
+  const [customFaceName, setCustomFaceName] = useState<string | null>(null);
+  const [isProcessingFace, setIsProcessingFace] = useState(false);
+
+
+    const handleFaceFileSelect = async (file: File | null) => {
+  if (!file) {
+    setCustomFaceUrl(null);
+    setCustomFaceName(null);
+    return;
+  }
+  setCustomFaceName(file.name);
+  setIsProcessingFace(true);
+  try {
+    const { removeBackground } = await import("@imgly/background-removal");
+    const blob = await removeBackground(file);
+    const url = URL.createObjectURL(blob);
+    setCustomFaceUrl(url);
+  } catch (err) {
+    console.error("Background removal failed, using original photo:", err);
+    setCustomFaceUrl(URL.createObjectURL(file));
+  } finally {
+    setIsProcessingFace(false);
+  }
+};
+
   const [celebration, setCelebration] = useState<{ rank: 1 | 2 | 3; id: number } | null>(null);
   const celebrationIdRef = useRef(0);
 
@@ -109,7 +136,7 @@ export default function App() {
     setAppPhase("playing");
     const engine = engineRef.current;
     if (engineReady && engine && engine.state !== "playing") {
-      engine.setPlayerAppearance(playerColor, playerShape);
+      engine.setPlayerAppearance(playerColor, playerShape, customFaceUrl);
       engine.start();
     }
   };
@@ -399,7 +426,7 @@ export default function App() {
                 onStreakChange={handleStreakChange}
                 onEngineReady={() => {
                   setEngineReady(true);
-                  if (engineRef.current) engineRef.current.setPlayerAppearance(playerColor, playerShape);
+                  if (engineRef.current) engineRef.current.setPlayerAppearance(playerColor, playerShape, customFaceUrl);
                 }}
               />
             </div>
@@ -631,6 +658,45 @@ export default function App() {
                         </div>
                       </div>
 
+
+
+                        <div className="rounded-3xl bg-[#241530]/95 p-4">
+                          <div className="flex items-center justify-between text-sm uppercase tracking-[0.2em] text-white/40">
+                            Player Image
+                          </div>
+                          <div className="mt-4 flex items-center gap-3">
+                            <label className="flex-1 cursor-pointer rounded-full border border-white/15 px-4 py-3 text-sm text-white/70 hover:bg-white/5 transition text-center truncate">
+                              {isProcessingFace ? "Removing background…" : customFaceName ? customFaceName : "Upload a photo…"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={isProcessingFace}
+                                onChange={(e) => handleFaceFileSelect(e.target.files?.[0] ?? null)}
+                              />
+                            </label>
+                            {customFaceUrl && (
+                              <>
+                                <img
+                                  src={customFaceUrl}
+                                  className="w-11 h-11 rounded-full object-cover border-2 border-white"
+                                />
+                                <button
+                                  onClick={() => handleFaceFileSelect(null)}
+                                  className="rounded-full border border-white/15 px-3 py-3 text-sm text-white/60 hover:bg-white/5"
+                                  aria-label="Remove photo"
+                                >
+                                  ✕
+                                </button>
+                              </>
+                            )}
+                          </div>
+                          <p className="mt-3 text-[10px] text-white/30">
+                            Stays on your device only — nothing is uploaded or saved.
+                          </p>
+                        </div>
+
+
                       <div className="rounded-3xl bg-[#241530]/95 p-4">
                         <div className="flex items-center justify-between text-sm uppercase tracking-[0.2em] text-white/40">Difficulty</div>
                         <div className="mt-4 flex gap-2 rounded-full bg-[#1c0f24]/90 p-1">
@@ -729,6 +795,8 @@ export default function App() {
               </div>
             </div>
           )}
+
+
 
           {state === "gameover" && (
             <GameOverModal

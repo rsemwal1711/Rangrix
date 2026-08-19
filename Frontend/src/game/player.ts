@@ -11,6 +11,7 @@ export class Player {
   private laneLerpSpeed = 12; // higher = snappier
   color = "#22d3ee";
   shape: "circle" | "square" | "triangle" = "circle";
+  faceImage: HTMLImageElement | null = null;
 
   constructor(laneWidth: number, laneCount: number) {
     this.laneWidth = laneWidth;
@@ -77,12 +78,22 @@ export class Player {
     ctx.arc(this.x, this.y, r * 3.2, 0, Math.PI * 2);
     ctx.fill();
 
+ 
     // Core + shape
     ctx.shadowColor = glowColor;
     ctx.shadowBlur = 24;
     ctx.fillStyle = this.color;
 
-    if (this.shape === "circle") {
+    if (this.faceImage) {
+      const faceR = r * 2.3;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, faceR, 0, Math.PI * 2);
+      ctx.save();
+      ctx.clip();
+      ctx.shadowBlur = 0;
+      ctx.drawImage(this.faceImage, this.x - faceR, this.y - faceR, faceR * 2, faceR * 2);
+      ctx.restore();
+    } else if (this.shape === "circle") {
       ctx.beginPath();
       ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
       ctx.fill();
@@ -102,13 +113,13 @@ export class Player {
     }
 
     // Inner highlight
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.beginPath();
-    ctx.arc(this.x - r * 0.3, this.y - r * 0.3, r * 0.35, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
+    if (!this.faceImage) {
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.beginPath();
+      ctx.arc(this.x - r * 0.3, this.y - r * 0.3, r * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   setColor(hex: string) {
@@ -117,6 +128,18 @@ export class Player {
 
   setShape(s: "circle" | "square" | "triangle") {
     this.shape = s;
+  }
+
+  setFaceImage(url: string | null) {
+    if (!url) {
+      this.faceImage = null;
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      this.faceImage = img;
+    };
+    img.src = url;
   }
 }
 
