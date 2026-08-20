@@ -10,7 +10,7 @@ import { AudioToggleButton } from "./audio/AudioToggleButton";
 import { SoundClickListener } from "./audio/SoundClickListener";
 import { Medal } from "./components/Medal";
 import { RankCelebration } from "./components/RankCelebrations";
-import { removeBackground } from "@imgly/background-removal";
+// import { removeBackground } from "@imgly/background-removal";
 
 
 function denseRank(entries: LeaderboardEntry[]): LeaderboardEntry[] {
