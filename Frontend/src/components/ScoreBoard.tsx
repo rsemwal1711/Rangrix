@@ -6,6 +6,7 @@ interface ScoreBoardProps {
 
 export default function ScoreBoard({ score, highScore, streak }: ScoreBoardProps) {
   const multiplier = 1 + Math.floor(streak / 5) * 0.5;
+  console.log(highScore);
 
   return (
     <div className="absolute top-4 left-0 right-0 flex items-start justify-between px-5 pointer-events-none">

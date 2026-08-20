@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {useState } from "react";
 
 import { useSound } from "../audio/AudioProvider";
 
@@ -39,15 +39,6 @@ export default function Navbar({
   const { muted, toggleMute } = useSound();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
-
-    window.addEventListener("scroll", onScroll);
-
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   // Close mobile menu whenever a tab is picked
   const handleNavigate = (tab: NavTab) => {

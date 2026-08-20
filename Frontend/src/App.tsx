@@ -6,7 +6,6 @@ import GameOverModal from "./components/GameOverModal";
 import { fetchLeaderboard, submitScore, LeaderboardEntry } from "./leaderboard";
 import { Engine, GameState } from "./game/engine";
 import { AudioProvider } from "./audio/AudioProvider";
-import { AudioToggleButton } from "./audio/AudioToggleButton";
 import { SoundClickListener } from "./audio/SoundClickListener";
 import { Medal } from "./components/Medal";
 import { RankCelebration } from "./components/RankCelebrations";
@@ -425,8 +424,6 @@ export default function App() {
             try { localStorage.removeItem("token"); localStorage.removeItem("username"); } catch { }
             setLeaderboard(DEMO_LEADERBOARD);
           }}
-          soundEnabled={soundEnabled}
-          onToggleSound={() => setSoundEnabled((v) => !v)}
         />
       )}
       <div className="stage relative min-h-screen w-full flex flex-col items-center justify-center overflow-y-auto overflow-x-hidden px-4 py-6 alive-bg">
