@@ -235,10 +235,6 @@ export class Engine {
     this.callbacks.onScoreChange(this.score);
   }
 
-  setSoundEnabled(enabled: boolean) {
-    this.sound.setEnabled(enabled);
-    if (!enabled) this.sound.stopBackground();
-  }
 
   setSoundVolume(v: number) {
     this.sound.setVolume(v);

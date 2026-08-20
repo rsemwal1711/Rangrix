@@ -36,7 +36,6 @@ export default function App() {
   const [highScore, setHighScore] = useState(0);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [soundVolume] = useState(0.6);
   const [playerColor, setPlayerColor] = useState<string>("#ff7849");
   const [playerShape, setPlayerShape] = useState<"circle" | "square" | "triangle">("circle");
@@ -334,10 +333,9 @@ export default function App() {
     const e = engineRef.current;
     if (!e) return;
     e.setDifficulty(difficulty);
-    e.setSoundEnabled(soundEnabled);
     e.setSoundVolume(soundVolume);
     e.setPlayerAppearance(playerColor, playerShape);
-  }, [difficulty, soundEnabled, soundVolume, playerColor, playerShape]);
+  }, [difficulty, soundVolume, playerColor, playerShape]);
 
   const handleAudioFileSelect = (file: File | null) => {
     if (customAudioUrl) URL.revokeObjectURL(customAudioUrl);
