@@ -28,10 +28,6 @@ export default function ScoreBoard({ score, highScore, streak }: ScoreBoardProps
         </div>
       )}
 
-      <div className="flex flex-col items-end bg-black/20 px-3 py-2 rounded-xl glass">
-        <span className="text-[11px] uppercase tracking-[0.2em] text-white/40">Best</span>
-        <span className="text-lg font-semibold text-white/70 tabular-nums">{highScore}</span>
-      </div>
     </div>
   );
 }

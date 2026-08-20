@@ -10,7 +10,8 @@ import { AudioToggleButton } from "./audio/AudioToggleButton";
 import { SoundClickListener } from "./audio/SoundClickListener";
 import { Medal } from "./components/Medal";
 import { RankCelebration } from "./components/RankCelebrations";
-// import { removeBackground } from "@imgly/background-removal";
+import Intro from "./components/Intro";
+import Navbar, { NavTab } from "./components/Navbar";
 
 
 function denseRank(entries: LeaderboardEntry[]): LeaderboardEntry[] {
@@ -36,11 +37,13 @@ export default function App() {
   const [highScore, setHighScore] = useState(0);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
-  const [soundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [soundVolume] = useState(0.6);
   const [playerColor, setPlayerColor] = useState<string>("#ff7849");
   const [playerShape, setPlayerShape] = useState<"circle" | "square" | "triangle">("circle");
   const [engineReady, setEngineReady] = useState(false);
+
+ 
   const [authToken, setAuthToken] = useState<string | null>(() => {
     try {
       return localStorage.getItem("token");
@@ -86,6 +89,10 @@ export default function App() {
   const [customFaceUrl, setCustomFaceUrl] = useState<string | null>(null);
   const [customFaceName, setCustomFaceName] = useState<string | null>(null);
   const [isProcessingFace, setIsProcessingFace] = useState(false);
+
+
+  // --- navbar
+  const [activeTab, setActiveTab] = useState<NavTab>("home");
 
 
     const handleFaceFileSelect = async (file: File | null) => {
@@ -386,7 +393,16 @@ export default function App() {
 
   const isPlaying = appPhase === "playing";
 
-  return (
+   const [showIntro, setShowIntro] = useState(true);
+
+    if (showIntro) {
+      return <Intro onFinish={() => setShowIntro(false)} />;
+    }
+
+    
+
+    return (
+    
     <AudioProvider>
       <SoundClickListener />
       {celebration && (
@@ -396,16 +412,30 @@ export default function App() {
           onDone={() => setCelebration(null)}
         />
       )}
-      <div className="stage relative min-h-screen w-full flex items-center justify-center overflow-y-auto overflow-x-hidden px-4 py-6 alive-bg">
-       
-        {/* <div 
-  className="fixed top-4 right-4 z-50 pointer-events-auto"
-  style={{ paddingTop: "env(safe-area-inset-top)", paddingRight: "env(safe-area-inset-right)" }}
-> */}
+      {!isPlaying && (
+        <Navbar
+          activeTab={activeTab}
+          onNavigate={(tab) => {
+            setActiveTab(tab);
+          }}
+          authUser={authUser}
+          onSignOut={() => {
+            setAuthToken(null);
+            setAuthUser(null);
+            try { localStorage.removeItem("token"); localStorage.removeItem("username"); } catch { }
+            setLeaderboard(DEMO_LEADERBOARD);
+          }}
+          soundEnabled={soundEnabled}
+          onToggleSound={() => setSoundEnabled((v) => !v)}
+        />
+      )}
+      <div className="stage relative min-h-screen w-full flex flex-col items-center justify-center overflow-y-auto overflow-x-hidden px-4 py-6 alive-bg">
 
-  <AudioToggleButton />
-  
-{/* </div> */}
+        
+             
+
+        
+        
         <SparkleTrail />
         <div className="bg-aurora" />
         <div className="bg-grid" />
@@ -418,6 +448,7 @@ export default function App() {
         <div className={`relative z-10 w-full ${isPlaying ? "max-w-[720px] h-[72dvh] max-h-[90dvh]" : "max-w-[1200px]"}`}>
 
           {isPlaying && (
+
             <div className="frame-inner">
               <GameCanvas
                 engineRef={engineRef}
@@ -435,6 +466,7 @@ export default function App() {
           {state === "playing" && <ScoreBoard score={score} highScore={highScore} streak={streak} />}
 
           {!isPlaying && appPhase === "intro" && (
+                
             <div className="relative w-full flex items-center justify-center px-6 py-6 overflow-hidden">
               <div className="rx-horizon" aria-hidden="true" />
 
@@ -442,7 +474,8 @@ export default function App() {
                 <div className="grid gap-8 lg:grid-cols-[1.5fr_0.9fr] items-start">
                   <div className="space-y-6">
                     <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
+
+                      {/* <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-[26px] bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-[#1c0f24] font-black text-3xl shadow-[0_18px_45px_rgba(255,120,73,0.35)]">
                         
                           R
@@ -457,7 +490,16 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </div> */}
+                      {authUser && (
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <div className="text-3xl font-bold text-white">{authUser}</div>
+                            <div className="text-sm text-amber-200/80">{myRank ? `Rank #${myRank}` : 'Unranked'}</div>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="rounded-full border border-pink-400/20 bg-white/5 px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-orange-100">
                         Ready to race
                       </div>
