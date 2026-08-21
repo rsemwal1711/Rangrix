@@ -12,6 +12,10 @@ import { RankCelebration } from "./components/RankCelebrations";
 import Intro from "./components/Intro";
 import Navbar, { NavTab } from "./components/Navbar";
 
+import Leaderboard from "./components/Leaderboard";
+import HowToPlay from "./components/HowToPlay";
+import Settings from "./components/Settings";
+
 
 function denseRank(entries: LeaderboardEntry[]): LeaderboardEntry[] {
   const sorted = [...entries].sort((a, b) => b.score - a.score);
@@ -40,6 +44,8 @@ export default function App() {
   const [playerColor, setPlayerColor] = useState<string>("#ff7849");
   const [playerShape, setPlayerShape] = useState<"circle" | "square" | "triangle">("circle");
   const [engineReady, setEngineReady] = useState(false);
+
+  const [runMode, setRunMode] = useState<"practice" | "ranked">("practice");
 
  
   const [authToken, setAuthToken] = useState<string | null>(() => {
@@ -132,6 +138,28 @@ export default function App() {
     }
   }, []);
 
+ const handleUpdateProfile = async (updates: { username?: string; email?: string; password?: string }) => {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/profile`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json.error || "Update failed");
+  }
+  const data = await res.json();
+  setAuthToken(data.token);
+  setAuthUser(data.username);
+  try {
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("username", data.username);
+  } catch {}
+};
+
   const handleRestart = () => {
     setAppPhase("playing");
     engineRef.current?.start();
@@ -146,7 +174,11 @@ export default function App() {
     }
   };
 
-  const handlePlayGame = () => {
+  const handlePlayGame = (mode: "practice" | "ranked") => {
+    setRunMode(mode);
+    if (mode === "ranked") {
+      setDifficulty("medium"); // lock it, no matter what was picked before
+    }
     setAppPhase("setup");
   };
 
@@ -215,10 +247,17 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (state === "gameover" && score > 0 && !isSubmittingScore && submittedRank == null) {
+    if (
+      state === "gameover" &&
+      score > 0 &&
+      !isSubmittingScore &&
+      submittedRank == null &&
+      runMode === "ranked"
+    ) {
       handleSubmitLeaderboard(score);
     }
-  }, [state, score, isSubmittingScore, submittedRank]);
+  }, [state, score, isSubmittingScore, submittedRank, runMode]
+);
 
   async function doAuth(endpoint: "login" | "signup") {
     setAuthError(null);
@@ -460,7 +499,40 @@ export default function App() {
 
           {state === "playing" && <ScoreBoard score={score} highScore={highScore} streak={streak} />}
 
-          {!isPlaying && appPhase === "intro" && (
+          {!isPlaying && activeTab === "leaderboard" && (
+            <Leaderboard
+              entries={leaderboard}
+              loading={leaderboardLoading}
+              limit={leaderboardLimit}
+              onLimitChange={setLeaderboardLimit}
+              isLive={!!authUser}
+              myRank={myRank}
+              onBack={() => setActiveTab("home")}
+            />
+          )}
+
+          {!isPlaying && activeTab === "howToPlay" && (
+            <HowToPlay
+              onBack={() => setActiveTab("home")}
+              onPlay={() => setActiveTab("home")}
+            />
+          )}
+
+          {!isPlaying && activeTab === "settings" && (
+            <Settings
+              onBack={() => setActiveTab("home")}
+              authUser={authUser}
+              onUpdateProfile={handleUpdateProfile}
+              onSignOut={() => {
+                setAuthToken(null);
+                setAuthUser(null);
+                try { localStorage.removeItem("token"); localStorage.removeItem("username"); } catch {}
+                setLeaderboard(DEMO_LEADERBOARD);
+              }}
+            />
+          )}
+
+          {!isPlaying && activeTab === "home" && appPhase === "intro" && (
                 
             <div className="relative w-full flex items-center justify-center px-6 py-6 overflow-hidden">
               <div className="rx-horizon" aria-hidden="true" />
@@ -561,13 +633,33 @@ export default function App() {
 
                     </div>
 
-                    <button
-                      onClick={handlePlayGame}
-                      disabled={!authUser}
-                      className={`w-full max-w-[340px] rounded-full px-8 py-4 text-lg font-semibold tracking-wide btn-primary shadow-[0_18px_42px_rgba(255,46,109,0.3)] ${authUser ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-[#1c0f24]' : 'bg-white/6 text-white/60 cursor-not-allowed'}`}
-                    >
-                      {authUser ? 'Launch Game' : 'Sign in to launch'}
-                    </button>
+                    <div className="grid gap-3 sm:grid-cols-2 w-full max-w-[340px]">
+                      <button
+                        onClick={() => handlePlayGame("practice")}
+                        disabled={!authUser}
+                        className={`rounded-full px-6 py-4 text-sm font-semibold tracking-wide border ${
+                          authUser
+                            ? "border-white/15 text-white hover:bg-white/5"
+                            : "border-white/5 text-white/40 cursor-not-allowed"
+                        }`}
+                      >
+                        Practice
+                      </button>
+                      <button
+                        onClick={() => handlePlayGame("ranked")}
+                        disabled={!authUser}
+                        className={`rounded-full px-6 py-4 text-sm font-semibold tracking-wide btn-primary ${
+                          authUser
+                            ? "bg-gradient-to-r from-orange-400 to-pink-500 text-[#1c0f24]"
+                            : "bg-white/6 text-white/60 cursor-not-allowed"
+                        }`}
+                      >
+                        Ranked Run
+                      </button>
+                    </div>
+                    {!authUser && (
+                      <p className="text-xs text-white/40 mt-2">Sign in to play</p>
+                    )}
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="rounded-3xl bg-[#1c0f24]/80 p-5">
@@ -735,13 +827,23 @@ export default function App() {
 
 
                       <div className="rounded-3xl bg-[#241530]/95 p-4">
-                        <div className="flex items-center justify-between text-sm uppercase tracking-[0.2em] text-white/40">Difficulty</div>
+                        <div className="flex items-center justify-between text-sm uppercase tracking-[0.2em] text-white/40">
+                          <span>Difficulty</span>
+                          {runMode === "ranked" && (
+                            <span className="text-[10px] normal-case tracking-normal text-amber-200/70">
+                              Locked — ranked runs are Medium
+                            </span>
+                          )}
+                        </div>
                         <div className="mt-4 flex gap-2 rounded-full bg-[#1c0f24]/90 p-1">
-                          {['easy', 'medium', 'hard'].map((level) => (
+                          {(['easy', 'medium', 'hard'] as const).map((level) => (
                             <button
                               key={level}
-                              onClick={() => setDifficulty(level as "easy" | "medium" | "hard")}
-                              className={`flex-1 rounded-full py-3 text-sm ${difficulty === level ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-[#1c0f24] font-semibold' : 'text-white/70'}`}
+                              disabled={runMode === "ranked"}
+                              onClick={() => setDifficulty(level)}
+                              className={`flex-1 rounded-full py-3 text-sm transition ${
+                                difficulty === level ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-[#1c0f24] font-semibold' : 'text-white/70'
+                              } ${runMode === "ranked" ? "opacity-40 cursor-not-allowed" : ""}`}
                             >
                               {level.charAt(0).toUpperCase() + level.slice(1)}
                             </button>
@@ -840,6 +942,7 @@ export default function App() {
               score={score}
               highScore={highScore}
               isNewHighScore={isNewHighScore}
+              runMode={runMode}
               onSubmitScore={() => handleSubmitLeaderboard(score)}
               isSubmittingScore={isSubmittingScore}
               submittedRank={submittedRank}
@@ -848,6 +951,7 @@ export default function App() {
               topScores={leaderboard}
               onRestart={handleRestart}
               onSelectDifficulty={(lvl) => {
+                setRunMode("practice");
                 setDifficulty(lvl);
                 engineRef.current?.setDifficulty(lvl);
                 setAppPhase("playing");

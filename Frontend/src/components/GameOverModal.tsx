@@ -2,6 +2,7 @@ interface GameOverModalProps {
   score: number;
   highScore: number;
   isNewHighScore: boolean;
+  runMode: "practice" | "ranked";
   topScores: Array<{ rank: number; name: string; score: number; detail: string }>;
   submittedRank: number | null;
   submissionMessage: string | null;
@@ -17,10 +18,10 @@ interface GameOverModalProps {
 export default function GameOverModal({
   score,
   isNewHighScore,
+  runMode,
   submittedRank,
   submissionMessage,
   submissionError,
-  // unused props are prefixed with underscore to avoid TS warnings
   topScores: _topScores,
   isSubmittingScore: _isSubmittingScore,
   onSubmitScore: _onSubmitScore,
@@ -41,13 +42,21 @@ export default function GameOverModal({
           <span className="text-xs uppercase tracking-[0.2em] text-white/40">Final Score</span>
         </div>
 
-        {isNewHighScore ? (
+          {isNewHighScore ? (
           <span className="text-sm font-medium text-yellow-300 animate-pulse-soft">
             New High Score!
           </span>
         ) : (
           <span className="text-sm text-white/50 tabular-nums"></span>
         )}
+
+        {runMode === "practice" ? (
+          <p className="text-sm text-white/50">Practice run — not counted on the leaderboard.</p>
+        ) : (
+          <p className="text-sm text-amber-200/70">Ranked run — submitted to the leaderboard.</p>
+        )}
+
+        <div className="w-full space-y-4"></div>
 
         <div className="w-full space-y-4">
           <div className="rounded-3xl bg-black/20 p-4 glass">
