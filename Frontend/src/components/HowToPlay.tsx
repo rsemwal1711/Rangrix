@@ -24,7 +24,7 @@ const TIPS = [
 ];
 
 // TODO: point this at your actual trailer file/URL (e.g. "/videos/trailer.mp4")
-const TRAILER_SRC = "../../public/sounds/trailer.mp4";
+const TRAILER_SRC = "/sounds/trailer.mp4";
 const TRAILER_POSTER = "/trailer-poster.jpg"; // optional, remove the prop below if you don't have one
 
 export default function HowToPlay({ onBack, onPlay }: HowToPlayProps) {
