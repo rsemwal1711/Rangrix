@@ -1,4 +1,4 @@
-import { getLeaderboardCollection } from "./db.js";
+import { getLeaderboardCollection, getUserCollection } from "./db.js";
 
 const DEFAULT_SCORES = [
   { rank: 1, name: "KANE", score: 1420, detail: "Neon Sprint" },
@@ -34,12 +34,43 @@ function timeAgo(date) {
   return "just now";
 }
 
+// Looks up current usernames for any entries that have a userId,
+// so the leaderboard always shows the live username instead of a stale snapshot
+async function resolveLiveNames(topScores) {
+  const userIds = [...new Set(topScores.filter((e) => e.userId).map((e) => e.userId))];
+  if (userIds.length === 0) return topScores;
+
+  const users = await getUserCollection();
+  if (!users) return topScores;
+
+  const { ObjectId } = await import("mongodb");
+  const objectIds = userIds
+    .map((id) => {
+      try {
+        return new ObjectId(id);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
+  const userDocs = await users.find({ _id: { $in: objectIds } }).toArray();
+  const nameById = new Map(userDocs.map((u) => [u._id.toString(), u.username]));
+
+  return topScores.map((entry) =>
+    entry.userId && nameById.has(entry.userId)
+      ? { ...entry, name: nameById.get(entry.userId) }
+      : entry
+  );
+}
+
 // Turns raw db docs into ranked leaderboard entries with a relative-time detail label
 function normalizeScores(topScores) {
   return topScores.map((item, index) => ({
     rank: index + 1,
     name: item.name,
     score: item.score,
+    userId: item.userId || null,
     detail: timeAgo(item.updatedAt || item.createdAt),
   }));
 }
@@ -85,7 +116,7 @@ export async function saveEntryToDb(entry) {
 
     const rank = await collection.countDocuments({ score: { $gt: result.value.score } }) + 1;
 
-    return { rank, topScores: normalizeScores(topScores) };
+    return { rank, topScores: await resolveLiveNames(normalizeScores(topScores)) };
   }
 
   const existing = await collection.findOne({ name: entry.name });
@@ -104,7 +135,7 @@ export async function saveEntryToDb(entry) {
 
     const rank = await collection.countDocuments({ score: { $gt: updated.value.score } }) + 1;
 
-    return { rank, topScores: normalizeScores(topScores) };
+    return { rank, topScores: await resolveLiveNames(normalizeScores(topScores)) };
   }
 
   await collection.insertOne({ name: entry.name, score: entry.score, createdAt: new Date() });
@@ -117,7 +148,7 @@ export async function saveEntryToDb(entry) {
 
   const rank = await collection.countDocuments({ score: { $gt: entry.score } }) + 1;
 
-  return { rank, topScores: normalizeScores(topScores) };
+  return { rank, topScores: await resolveLiveNames(normalizeScores(topScores)) };
 }
 
 export async function loadScoresFromDb() {
@@ -132,7 +163,7 @@ export async function loadScoresFromDb() {
     .limit(10)
     .toArray();
 
-  return normalizeScores(topScores);
+  return resolveLiveNames(normalizeScores(topScores));
 }
 
 export async function getUserRank(userId) {

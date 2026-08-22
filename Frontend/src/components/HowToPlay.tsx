@@ -1,4 +1,5 @@
-import { ArrowLeft, Target, Keyboard, Gauge, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Target, Keyboard, Gauge, Sparkles, Play, Pause, Maximize2 } from "lucide-react";
 
 interface HowToPlayProps {
   onBack: () => void;
@@ -22,7 +23,62 @@ const TIPS = [
   "Your best score is saved automatically and compared on the leaderboard.",
 ];
 
+// TODO: point this at your actual trailer file/URL (e.g. "/videos/trailer.mp4")
+const TRAILER_SRC = "../../public/sounds/trailer.mp4";
+const TRAILER_POSTER = "/trailer-poster.jpg"; // optional, remove the prop below if you don't have one
+
 export default function HowToPlay({ onBack, onPlay }: HowToPlayProps) {
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+
+  // Real fullscreen, same as YouTube — asks the browser to fullscreen the video element itself
+  const openFullscreen = () => {
+    const video = previewVideoRef.current;
+    if (!video) return;
+    if (video.requestFullscreen) {
+      video.requestFullscreen();
+    } else if ((video as any).webkitRequestFullscreen) {
+      (video as any).webkitRequestFullscreen(); // Safari
+    } else if ((video as any).webkitEnterFullscreen) {
+      (video as any).webkitEnterFullscreen(); // iOS Safari
+    }
+    video.muted = false;
+    video.play();
+  };
+
+  // On phones/tablets, force landscape while the video is fullscreen
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFullscreen = !!document.fullscreenElement;
+      const orientation = screen.orientation as any;
+      if (isFullscreen && orientation?.lock) {
+        orientation.lock("landscape").catch(() => {
+          // Some browsers (e.g. desktop, or without user gesture) reject this silently — safe to ignore
+        });
+      } else if (!isFullscreen && orientation?.unlock) {
+        orientation.unlock();
+      }
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const togglePlay = () => {
+    const video = previewVideoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play();
+      setIsPlaying(true);
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  };
+
   return (
     <div className="relative w-full flex items-center justify-center px-6 py-6 min-h-[calc(100vh-88px)] animate-fade-in">
       <div className="w-full max-w-2xl">
@@ -51,6 +107,66 @@ export default function HowToPlay({ onBack, onPlay }: HowToPlayProps) {
             Stay in your lane, dodge what's coming, and keep your streak alive. Rangrix rewards clean,
             consistent runs over risky sprints.
           </p>
+
+          {/* Gameplay trailer */}
+          <div className="mb-6 relative rounded-[28px] p-[1.5px] bg-gradient-to-br from-orange-400/70 via-pink-500/50 to-transparent shadow-[0_20px_50px_rgba(255,46,109,0.18)]">
+            <div className="relative rounded-[27px] bg-black overflow-hidden">
+              <div className="relative h-44 sm:h-52 w-full">
+                <video
+                  ref={previewVideoRef}
+                  src={TRAILER_SRC}
+                  poster={TRAILER_POSTER}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  muted
+                  loop
+                  playsInline
+                  autoPlay
+                  onClick={togglePlay}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                />
+
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+                <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 backdrop-blur-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-pink-400 animate-pulse" />
+                  <span className="text-[10px] uppercase tracking-[0.25em] text-white/70">Gameplay Preview</span>
+                </div>
+
+                <button
+                  onClick={openFullscreen}
+                  className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 backdrop-blur-sm transition"
+                  aria-label="Expand preview to fullscreen"
+                >
+                  <Maximize2 size={14} />
+                </button>
+
+                <button
+                  onClick={togglePlay}
+                  className="group absolute inset-0 flex items-center justify-center"
+                  aria-label={isPlaying ? "Pause preview" : "Play preview"}
+                >
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 group-hover:scale-105 group-hover:bg-white/20 transition">
+                    {isPlaying ? (
+                      <Pause size={22} className="text-white" fill="white" />
+                    ) : (
+                      <Play size={22} className="ml-0.5 text-white" fill="white" />
+                    )}
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-white/5">
+                <p className="text-xs text-white/50">Dash between lanes, time your jumps, keep the streak alive.</p>
+                <button
+                  onClick={openFullscreen}
+                  className="shrink-0 text-xs font-medium text-amber-200/80 hover:text-amber-100 transition"
+                >
+                  View fullscreen
+                </button>
+              </div>
+            </div>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-3xl bg-[#241530]/95 p-5">
@@ -110,6 +226,7 @@ export default function HowToPlay({ onBack, onPlay }: HowToPlayProps) {
           )}
         </div>
       </div>
+
     </div>
   );
 }
